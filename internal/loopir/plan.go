@@ -64,9 +64,9 @@ type Plan struct {
 	// NonEmpty is set when the loop is known to run at least once.
 	NonEmpty bool
 	// Checked lists every slice whose length must be verified against the
-	// limit before the loop runs: for each store in order, its destination and
-	// then each slice it reads, in the order the loads are emitted. A slice read
-	// at several offsets is listed once for each.
+	// limit before the loop runs: for each store in order, its destination at
+	// its offset and then each slice it reads, in the order the loads are
+	// emitted. A slice read at several offsets is listed once for each.
 	Checked []Access
 	// Hoists lists the slices the loop reaches through a selector (x.f), in order: the
 	// emitted code assigns each Name from Src once before the loop.
@@ -87,9 +87,11 @@ type Access struct {
 }
 
 // PlanStmt is a statement whose value has been normalized; see Normalize. It
-// stores to Dst, defines Temp, or folds into Acc with Op, whichever is set.
+// stores to Dst at offset Off, defines Temp, or folds into Acc with Op, whichever
+// is set.
 type PlanStmt struct {
 	Dst  *Ref
+	Off  string
 	Temp *Temp
 	Acc  types.Object
 	Op   Op
@@ -127,7 +129,7 @@ func NewPlan(l *Loop, opts Options) (*Plan, Reason) {
 			if !types.Identical(stmt.Dst.Elem, elem) {
 				return nil, ReasonMixedTypes
 			}
-			planned = PlanStmt{Dst: stmt.Dst, Root: Normalize(stmt.Val)}
+			planned = PlanStmt{Dst: stmt.Dst, Off: stmt.Off, Root: Normalize(stmt.Val)}
 		case Let:
 			if !types.Identical(stmt.Temp.Var.Type(), elem) {
 				return nil, ReasonMixedTypes
@@ -180,9 +182,10 @@ func NewPlan(l *Loop, opts Options) (*Plan, Reason) {
 	p.Start, p.Limit, p.NonEmpty, p.TripRef = trip.Start, trip.Limit, trip.NonEmpty, trip.Slice
 	// The generated loop stops at the length of the stored slice, so unless the
 	// limit is exactly that, the limit is spelled out on every slice or a longer
-	// one would be read or written past it.
+	// one would be read or written past it. A store at an offset always needs it:
+	// the elements past limit+offset are ones the scalar loop does not write.
 	for _, stmt := range p.Stmts {
-		if stmt.Dst != nil && (trip.Slice == nil || stmt.Dst.Obj != trip.Slice.Obj) {
+		if stmt.Dst != nil && (trip.Slice == nil || stmt.Dst.Obj != trip.Slice.Obj || stmt.Off != "") {
 			p.Bound = trip.Limit
 			break
 		}
@@ -193,7 +196,7 @@ func NewPlan(l *Loop, opts Options) (*Plan, Reason) {
 	for _, stmt := range p.Stmts {
 		if stmt.Dst != nil {
 			stored[stmt.Dst.Obj] = true
-			p.Checked = appendAccess(p.Checked, Access{Ref: stmt.Dst})
+			p.Checked = appendAccess(p.Checked, Access{Ref: stmt.Dst, Off: stmt.Off})
 			refs = appendRef(refs, stmt.Dst)
 		}
 		for _, leaf := range Leaves(stmt.Root) {

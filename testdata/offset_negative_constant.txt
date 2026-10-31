@@ -1,7 +1,7 @@
-# A read at a negative constant offset is rewritten while every index it reads can
-# be zero or more: from a constant start at least as large as the offset, a named
+# A read or store at a negative constant offset is rewritten while every index it
+# touches can be zero or more: from a constant start at least as large as the offset, a named
 # one included, which the emitted code keeps by name, and up to a constant limit
-# that leaves the highest index read at zero or more. Loops whose index is a
+# that leaves the highest index touched at zero or more. Loops whose index is a
 # negative constant are left alone (see offset_negative_constant_no_rewrite.txt).
 
 exec go run ./testmain
@@ -52,6 +52,18 @@ func NamedStartCopy(dst, a []int32, n int) {
 func LastIndexZero(dst, a []int32, k int) {
 	for i := k; i < 16; i++ {
 		dst[i] = a[i-15] + 1
+	}
+}
+
+func StoreFirstIndexZero(dst, a []int32) {
+	for i := 15; i < 31; i++ {
+		dst[i-15] = a[i] * 3
+	}
+}
+
+func StoreNamedStart(dst, a []int32, n int) {
+	for i := s1; i < n; i++ {
+		dst[i-1] = a[i] * 3
 	}
 }
 -- ops_simd.go.want --
@@ -238,6 +250,84 @@ func LastIndexZero(dst, a []int32, k int) {
 	}
 }
 
+func StoreFirstIndexZero(dst, a []int32) {
+	_vcInt32s5 := simd.BroadcastInt32s(3)
+	if _loopvecOverlap(dst, a, 0, 31, 15, 31) {
+		for i := 15; i < 31; i++ {
+			dst[i-15] = a[i] * 3
+		}
+	} else {
+		_ = dst[31-16]
+		_ = a[31-1]
+		{
+			_w1 := dst[0:][:(31 - 15):(31 - 15)]
+			_count := len(_w1)
+			_w2 := a[15:][:_count:_count]
+			_i, _lanes := 0, simd.BroadcastInt32s(0).Len()
+			for ; _i <= _count-4*_lanes; _i += 4 * _lanes {
+				_c1, _c2 := _w1[_i:][:4*_lanes], _w2[_i:][:4*_lanes]
+				_v1 := simd.LoadInt32s(_c2)
+				_v1.Mul(_vcInt32s5).Store(_c1)
+				_v2 := simd.LoadInt32s(_c2[_lanes:])
+				_v2.Mul(_vcInt32s5).Store(_c1[_lanes:])
+				_v3 := simd.LoadInt32s(_c2[2*_lanes:])
+				_v3.Mul(_vcInt32s5).Store(_c1[2*_lanes:])
+				_v4 := simd.LoadInt32s(_c2[3*_lanes:])
+				_v4.Mul(_vcInt32s5).Store(_c1[3*_lanes:])
+			}
+			for ; _i <= _count-_lanes; _i += _lanes {
+				_v5 := simd.LoadInt32s(_w2[_i:])
+				_v5.Mul(_vcInt32s5).Store(_w1[_i:])
+			}
+			for _i < _count {
+				_v6, _n := simd.LoadInt32sPart(_w2[_i:])
+				_v6.Mul(_vcInt32s5).StorePart(_w1[_i:])
+				_i += _n
+			}
+		}
+	}
+}
+
+func StoreNamedStart(dst, a []int32, n int) {
+	_vcInt32s6 := simd.BroadcastInt32s(3)
+	if _loopvecOverlap(dst, a, s1-1, n, s1, n) {
+		for i := s1; i < n; i++ {
+			dst[i-1] = a[i] * 3
+		}
+	} else {
+		if n > s1 {
+			_ = dst[n-2]
+			_ = a[n-1]
+			{
+				_w1 := dst[s1-1:][:(n - s1):(n - s1)]
+				_count := len(_w1)
+				_w2 := a[s1:][:_count:_count]
+				_i, _lanes := 0, simd.BroadcastInt32s(0).Len()
+				for ; _i <= _count-4*_lanes; _i += 4 * _lanes {
+					_c1, _c2 := _w1[_i:][:4*_lanes], _w2[_i:][:4*_lanes]
+					_v1 := simd.LoadInt32s(_c2)
+					_v1.Mul(_vcInt32s6).Store(_c1)
+					_v2 := simd.LoadInt32s(_c2[_lanes:])
+					_v2.Mul(_vcInt32s6).Store(_c1[_lanes:])
+					_v3 := simd.LoadInt32s(_c2[2*_lanes:])
+					_v3.Mul(_vcInt32s6).Store(_c1[2*_lanes:])
+					_v4 := simd.LoadInt32s(_c2[3*_lanes:])
+					_v4.Mul(_vcInt32s6).Store(_c1[3*_lanes:])
+				}
+				for ; _i <= _count-_lanes; _i += _lanes {
+					_v5 := simd.LoadInt32s(_w2[_i:])
+					_v5.Mul(_vcInt32s6).Store(_w1[_i:])
+				}
+				for _i < _count {
+					_v6, _n := simd.LoadInt32sPart(_w2[_i:])
+					_v6.Mul(_vcInt32s6).StorePart(_w1[_i:])
+					_i += _n
+				}
+			}
+		}
+	}
+}
+
 func _loopvecOverlap[T any](a, b []T, aLo, aHi, bLo, bHi int) bool {
 	if aLo >= aHi || bLo >= bHi {
 		return false
@@ -248,7 +338,7 @@ func _loopvecOverlap[T any](a, b []T, aLo, aHi, bLo, bHi int) bool {
 	return aBase+uintptr(aLo)*size < bBase+uintptr(bHi)*size && bBase+uintptr(bLo)*size < aBase+uintptr(aHi)*size
 }
 -- stderr.want --
-loopvec: rewrote 5 loop(s) in $WORK/ops.go
+loopvec: rewrote 7 loop(s) in $WORK/ops.go
 -- testmain/main.go --
 package main
 
@@ -288,6 +378,16 @@ func main() {
 	test.LastIndexZero(dst, ramp(1), 15)
 	fmt.Println(dst)
 	fmt.Println(try(func() { test.LastIndexZero(make([]int32, 16), ramp(1), 14) }))
+
+	dst = make([]int32, 16)
+	test.StoreFirstIndexZero(dst, ramp(31))
+	fmt.Println(dst)
+	fmt.Println(try(func() { test.StoreFirstIndexZero(make([]int32, 15), ramp(31)) }))
+
+	dst = make([]int32, 20)
+	test.StoreNamedStart(dst, ramp(21), 21)
+	fmt.Println(dst)
+	fmt.Println(try(func() { test.StoreNamedStart(make([]int32, 19), ramp(21), 21) }))
 }
 -- testmain/output --
 [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17]
@@ -298,4 +398,8 @@ true
 [0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20]
 true
 [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2]
+true
+[48 51 54 57 60 63 66 69 72 75 78 81 84 87 90 93]
+true
+[6 9 12 15 18 21 24 27 30 33 36 39 42 45 48 51 54 57 60 63]
 true

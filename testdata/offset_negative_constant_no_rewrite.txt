@@ -1,11 +1,11 @@
-# A read at a negative constant offset is left alone when an index it reads is a
-# negative constant: the one at the lowest index the loop visits, with a constant
+# A read or store at a negative constant offset is left alone when an index it
+# touches is a negative constant: the one at the lowest index the loop visits, with a constant
 # start (a[i-1] over 0..n-1, whichever way the loop counts, and over a range of a
 # slice), or every one, with a constant limit (a[i-16] in a loop that stops before
 # 16). The scalar loop panics when it reaches that index, and the vector loop would
 # index at a negative constant, which does not compile. The start and limit may be
 # literals, named constants or constant expressions (see offset_negative_constant.txt
-# for the loops that are rewritten). A read at a positive constant offset that
+# for the loops that are rewritten). A read or store at a positive constant offset that
 # pushes a constant start or limit past the largest int is left alone too, since the
 # emitted code would add them.
 
@@ -95,6 +95,30 @@ func StartPastLargest(dst, a []int32, n int) {
 		dst[i] = a[i+2] + 1
 	}
 }
+
+func StoreEveryIndexNegative(dst, a []int32) {
+	for i := 0; i < 16; i++ {
+		dst[i-16] = a[i] * 3
+	}
+}
+
+func StoreFirstIndexNegative(dst, a []int32, n int) {
+	for i := s0; i < n; i++ {
+		dst[i-1] = a[i] * 3
+	}
+}
+
+func StoreCountingDownToZero(dst, a []int32) {
+	for i := 15; i >= 0; i-- {
+		dst[i-1] = a[i] + 1
+	}
+}
+
+func StoreLimitPastLargest(dst, a []int32) {
+	for i := 0; i < math.MaxInt64; i++ {
+		dst[i+1] = a[i] + 1
+	}
+}
 -- stdout.want --
 {"file":"$WORK/ops.go","line":6,"func":"EveryIndexNegative","vectorized":false,"reason":"a constant offset puts an index below zero","stage":"lower"}
 {"file":"$WORK/ops.go","line":12,"func":"FarBelow","vectorized":false,"reason":"a constant offset puts an index below zero","stage":"lower"}
@@ -107,3 +131,7 @@ func StartPastLargest(dst, a []int32, n int) {
 {"file":"$WORK/ops.go","line":56,"func":"RangeOverSlice","vectorized":false,"reason":"a constant offset puts an index below zero","stage":"lower"}
 {"file":"$WORK/ops.go","line":62,"func":"LimitPastLargest","vectorized":false,"reason":"loop limit is not a loop-invariant integer expression","stage":"lower"}
 {"file":"$WORK/ops.go","line":68,"func":"StartPastLargest","vectorized":false,"reason":"loop start is not a loop-invariant integer expression","stage":"lower"}
+{"file":"$WORK/ops.go","line":74,"func":"StoreEveryIndexNegative","vectorized":false,"reason":"a constant offset puts an index below zero","stage":"lower"}
+{"file":"$WORK/ops.go","line":80,"func":"StoreFirstIndexNegative","vectorized":false,"reason":"a constant offset puts an index below zero","stage":"lower"}
+{"file":"$WORK/ops.go","line":86,"func":"StoreCountingDownToZero","vectorized":false,"reason":"a constant offset puts an index below zero","stage":"lower"}
+{"file":"$WORK/ops.go","line":92,"func":"StoreLimitPastLargest","vectorized":false,"reason":"loop limit is not a loop-invariant integer expression","stage":"lower"}
