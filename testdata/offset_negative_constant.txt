@@ -1,0 +1,45 @@
+# A read at a negative constant offset in a loop with a constant limit is rewritten
+# while the last index it reads is at least zero. When every index is below zero
+# (a[i-16] in a loop that stops before 16), the scalar loop panics on its first
+# iteration and the length check of the vector loop would be a negative constant
+# index, which does not compile, so the loop is left alone. The rewritten package
+# must build.
+
+loopvec -json .
+cmpenv stdout stdout.want
+
+loopvec -split .
+cmpenv stderr stderr.want
+env GOEXPERIMENT=simd
+exec go build .
+
+-- go.mod --
+module example.com/test
+
+go 1.27.1
+-- ops.go --
+package test
+
+func LastIndexZero(dst, a []int32) {
+	for i := 0; i < 16; i++ {
+		dst[i] = a[i-15] + 1
+	}
+}
+
+func EveryIndexNegative(dst, a []int32) {
+	for i := 0; i < 16; i++ {
+		dst[i] = a[i-16] + 1
+	}
+}
+
+func FarBelow(dst, a []float32) {
+	for i := 0; i < 16; i++ {
+		dst[i] = a[i-20] * a[i]
+	}
+}
+-- stdout.want --
+{"file":"$WORK/ops.go","line":4,"func":"LastIndexZero","vectorized":true}
+{"file":"$WORK/ops.go","line":10,"func":"EveryIndexNegative","vectorized":false,"reason":"a constant offset puts every index below zero","stage":"lower"}
+{"file":"$WORK/ops.go","line":16,"func":"FarBelow","vectorized":false,"reason":"a constant offset puts every index below zero","stage":"lower"}
+-- stderr.want --
+loopvec: rewrote 1 loop(s) in $WORK/ops.go

@@ -532,6 +532,23 @@ func (l *lowerer) body(node ast.Stmt, block *ast.BlockStmt, trip Trip, step int6
 		}
 	}
 
+	// A constant offset that puts every index below a constant limit under zero
+	// would make the length check a negative constant index, which does not
+	// compile. The scalar loop panics on its first iteration, so it is left alone.
+	if limit, err := strconv.ParseInt(trip.Limit, 10, 64); err == nil {
+		for _, stmt := range body {
+			for _, leaf := range Leaves(stmtValue(stmt)) {
+				load, ok := leaf.(*Load)
+				if !ok {
+					continue
+				}
+				if off, err := strconv.ParseInt(load.Off, 10, 64); err == nil && limit+off <= 0 {
+					return nil, ReasonNegativeIndex
+				}
+			}
+		}
+	}
+
 	loop := &Loop{
 		Node: node,
 		Ind:  Induction{Var: l.iv, Step: step, Trip: trip},
