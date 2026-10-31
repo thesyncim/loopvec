@@ -91,11 +91,19 @@ func Diff(dst, a []float64) {
 			_ = dst[(len(dst)-1)-1]
 			_ = a[len(dst)-1]
 			_ = a[(len(dst)-1)-1]
-			for _i := 0; _i < len(dst)-1; {
-				_v1, _n := simd.LoadFloat64sPart(a[_i+1:])
-				_v2, _ := simd.LoadFloat64sPart(a[_i : len(dst)-1])
-				_v1.Sub(_v2).StorePart(dst[_i : len(dst)-1])
-				_i += _n
+			{
+				_i := 0
+				for _lanes := simd.BroadcastFloat64s(0).Len(); _i <= (len(dst)-1)-_lanes; _i += _lanes {
+					_v1 := simd.LoadFloat64s(a[_i+1:])
+					_v2 := simd.LoadFloat64s(a[_i : len(dst)-1])
+					_v1.Sub(_v2).Store(dst[_i : len(dst)-1])
+				}
+				for _i < len(dst)-1 {
+					_v3, _n := simd.LoadFloat64sPart(a[_i+1:])
+					_v4, _ := simd.LoadFloat64sPart(a[_i : len(dst)-1])
+					_v3.Sub(_v4).StorePart(dst[_i : len(dst)-1])
+					_i += _n
+				}
 			}
 		}
 	}
@@ -113,12 +121,21 @@ func Smooth(dst, a []int32) {
 			_ = a[(len(dst)-1)-2]
 			_ = a[(len(dst)-1)-1]
 			_ = a[len(dst)-1]
-			for _i := 1; _i < len(dst)-1; {
-				_v1, _n := simd.LoadInt32sPart(a[_i-1:])
-				_v2, _ := simd.LoadInt32sPart(a[_i : len(dst)-1])
-				_v3, _ := simd.LoadInt32sPart(a[_i+1:])
-				_v1.Add(_v2).Add(_v3).StorePart(dst[_i : len(dst)-1])
-				_i += _n
+			{
+				_i := 1
+				for _lanes := simd.BroadcastInt32s(0).Len(); _i <= (len(dst)-1)-_lanes; _i += _lanes {
+					_v1 := simd.LoadInt32s(a[_i-1:])
+					_v2 := simd.LoadInt32s(a[_i : len(dst)-1])
+					_v3 := simd.LoadInt32s(a[_i+1:])
+					_v1.Add(_v2).Add(_v3).Store(dst[_i : len(dst)-1])
+				}
+				for _i < len(dst)-1 {
+					_v4, _n := simd.LoadInt32sPart(a[_i-1:])
+					_v5, _ := simd.LoadInt32sPart(a[_i : len(dst)-1])
+					_v6, _ := simd.LoadInt32sPart(a[_i+1:])
+					_v4.Add(_v5).Add(_v6).StorePart(dst[_i : len(dst)-1])
+					_i += _n
+				}
 			}
 		}
 	}
@@ -134,10 +151,17 @@ func Shift(dst, a []int32, off int) {
 	} else {
 		if len(dst) > 0 {
 			_ = a[len(dst)+off-1]
-			for _i := 0; _i < len(dst); {
-				_v1, _n := simd.LoadInt32sPart(a[_i+off:])
-				_v1.Mul(_vcInt32s2).StorePart(dst[_i:])
-				_i += _n
+			{
+				_i := 0
+				for _lanes := simd.BroadcastInt32s(0).Len(); _i <= len(dst)-_lanes; _i += _lanes {
+					_v1 := simd.LoadInt32s(a[_i+off:])
+					_v1.Mul(_vcInt32s2).Store(dst[_i:])
+				}
+				for _i < len(dst) {
+					_v2, _n := simd.LoadInt32sPart(a[_i+off:])
+					_v2.Mul(_vcInt32s2).StorePart(dst[_i:])
+					_i += _n
+				}
 			}
 		}
 	}
@@ -181,7 +205,7 @@ func SumPairs(a []int32) int32 {
 			if len(a)-1 >= 64 {
 				_a1 := simd.BroadcastInt32s(0)
 				_lanes := _a1.Len()
-				for ; _i+_lanes <= len(a)-1; _i += _lanes {
+				for ; _i <= (len(a)-1)-_lanes; _i += _lanes {
 					_v1 := simd.LoadInt32s(a[_i:])
 					_v2 := simd.LoadInt32s(a[_i+1:])
 					_a1 = _a1.Add(_v1.Mul(_v2))

@@ -67,12 +67,21 @@ func IncrAdd(a, b, incr []float32) {
 			_ = incr[len(a)-1]
 			_ = a[len(a)-1]
 			_ = b[len(a)-1]
-			for _i := 0; _i < len(a); {
-				_v1, _n := simd.LoadFloat32sPart(a[_i:len(a)])
-				_v2, _ := simd.LoadFloat32sPart(b[_i:len(a)])
-				_v3, _ := simd.LoadFloat32sPart(incr[_i:len(a)])
-				_v1.Add(_v2).Add(_v3).StorePart(incr[_i:len(a)])
-				_i += _n
+			{
+				_i := 0
+				for _lanes := simd.BroadcastFloat32s(0).Len(); _i <= len(a)-_lanes; _i += _lanes {
+					_v1 := simd.LoadFloat32s(a[_i:len(a)])
+					_v2 := simd.LoadFloat32s(b[_i:len(a)])
+					_v3 := simd.LoadFloat32s(incr[_i:len(a)])
+					_v1.Add(_v2).Add(_v3).Store(incr[_i:len(a)])
+				}
+				for _i < len(a) {
+					_v4, _n := simd.LoadFloat32sPart(a[_i:len(a)])
+					_v5, _ := simd.LoadFloat32sPart(b[_i:len(a)])
+					_v6, _ := simd.LoadFloat32sPart(incr[_i:len(a)])
+					_v4.Add(_v5).Add(_v6).StorePart(incr[_i:len(a)])
+					_i += _n
+				}
 			}
 		}
 	}

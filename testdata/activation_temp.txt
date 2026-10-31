@@ -129,12 +129,21 @@ func HardSwish(dst, x []float32) {
 	} else {
 		if len(dst) > 0 {
 			_ = x[len(dst)-1]
-			for _i := 0; _i < len(dst); {
-				_v1, _n := simd.LoadFloat32sPart(x[_i:])
-				_t1 := _v1.Add(_vcFloat32s0_1)
-				_t2 := _vcFloat32s0_2.IfElse(_t1.Less(_vcFloat32s0_2), _vcFloat32s0_4.IfElse(_t1.Greater(_vcFloat32s0_4), _t1))
-				_v1.Mul(_t2).Div(_vcFloat32s0_4).StorePart(dst[_i:])
-				_i += _n
+			{
+				_i := 0
+				for _lanes := simd.BroadcastFloat32s(0).Len(); _i <= len(dst)-_lanes; _i += _lanes {
+					_v1 := simd.LoadFloat32s(x[_i:])
+					_t1 := _v1.Add(_vcFloat32s0_1)
+					_t2 := _vcFloat32s0_2.IfElse(_t1.Less(_vcFloat32s0_2), _vcFloat32s0_4.IfElse(_t1.Greater(_vcFloat32s0_4), _t1))
+					_v1.Mul(_t2).Div(_vcFloat32s0_4).Store(dst[_i:])
+				}
+				for _i < len(dst) {
+					_v2, _n := simd.LoadFloat32sPart(x[_i:])
+					_t3 := _v2.Add(_vcFloat32s0_1)
+					_t4 := _vcFloat32s0_2.IfElse(_t3.Less(_vcFloat32s0_2), _vcFloat32s0_4.IfElse(_t3.Greater(_vcFloat32s0_4), _t3))
+					_v2.Mul(_t4).Div(_vcFloat32s0_4).StorePart(dst[_i:])
+					_i += _n
+				}
 			}
 		}
 	}
@@ -158,13 +167,23 @@ func HardSigmoid(dst, x []float32) {
 	} else {
 		if len(dst) > 0 {
 			_ = x[len(dst)-1]
-			for _i := 0; _i < len(dst); {
-				_v1, _n := simd.LoadFloat32sPart(x[_i:])
-				_t1 := _v1.Add(_vcFloat32s1_1)
-				_t2 := _vcFloat32s1_2.IfElse(_t1.Less(_vcFloat32s1_2), _t1)
-				_t3 := _vcFloat32s1_4.IfElse(_t2.Greater(_vcFloat32s1_4), _t2)
-				_t3.Div(_vcFloat32s1_4).StorePart(dst[_i:])
-				_i += _n
+			{
+				_i := 0
+				for _lanes := simd.BroadcastFloat32s(0).Len(); _i <= len(dst)-_lanes; _i += _lanes {
+					_v1 := simd.LoadFloat32s(x[_i:])
+					_t1 := _v1.Add(_vcFloat32s1_1)
+					_t2 := _vcFloat32s1_2.IfElse(_t1.Less(_vcFloat32s1_2), _t1)
+					_t3 := _vcFloat32s1_4.IfElse(_t2.Greater(_vcFloat32s1_4), _t2)
+					_t3.Div(_vcFloat32s1_4).Store(dst[_i:])
+				}
+				for _i < len(dst) {
+					_v2, _n := simd.LoadFloat32sPart(x[_i:])
+					_t4 := _v2.Add(_vcFloat32s1_1)
+					_t5 := _vcFloat32s1_2.IfElse(_t4.Less(_vcFloat32s1_2), _t4)
+					_t6 := _vcFloat32s1_4.IfElse(_t5.Greater(_vcFloat32s1_4), _t5)
+					_t6.Div(_vcFloat32s1_4).StorePart(dst[_i:])
+					_i += _n
+				}
 			}
 		}
 	}
@@ -186,12 +205,21 @@ func ClampInt(dst, x []int32, lo, hi int32) {
 	} else {
 		if len(dst) > 0 {
 			_ = x[len(dst)-1]
-			for _i := 0; _i < len(dst); {
-				_v1, _n := simd.LoadInt32sPart(x[_i:])
-				_t1 := _v1
-				_t2 := _vcInt32s2_1.IfElse(_t1.Less(_vcInt32s2_1), _vcInt32s2_3.IfElse(_t1.Greater(_vcInt32s2_3), _t1))
-				_t2.StorePart(dst[_i:])
-				_i += _n
+			{
+				_i := 0
+				for _lanes := simd.BroadcastInt32s(0).Len(); _i <= len(dst)-_lanes; _i += _lanes {
+					_v1 := simd.LoadInt32s(x[_i:])
+					_t1 := _v1
+					_t2 := _vcInt32s2_1.IfElse(_t1.Less(_vcInt32s2_1), _vcInt32s2_3.IfElse(_t1.Greater(_vcInt32s2_3), _t1))
+					_t2.Store(dst[_i:])
+				}
+				for _i < len(dst) {
+					_v2, _n := simd.LoadInt32sPart(x[_i:])
+					_t3 := _v2
+					_t4 := _vcInt32s2_1.IfElse(_t3.Less(_vcInt32s2_1), _vcInt32s2_3.IfElse(_t3.Greater(_vcInt32s2_3), _t3))
+					_t4.StorePart(dst[_i:])
+					_i += _n
+				}
 			}
 		}
 	}
@@ -216,12 +244,21 @@ func SiLUSoftsign(dst, x []float32) {
 	} else {
 		if len(dst) > 0 {
 			_ = x[len(dst)-1]
-			for _i := 0; _i < len(dst); {
-				_v1, _n := simd.LoadFloat32sPart(x[_i:])
-				_t1 := _v1
-				_t2 := _t1.Neg().IfElse(_t1.Less(_vcFloat32s3_1), _t1)
-				_v1.Mul(_vcFloat32s3_2).Div(_t2.Add(_vcFloat32s3_3)).Add(_vcFloat32s3_2).Mul(_v1).StorePart(dst[_i:])
-				_i += _n
+			{
+				_i := 0
+				for _lanes := simd.BroadcastFloat32s(0).Len(); _i <= len(dst)-_lanes; _i += _lanes {
+					_v1 := simd.LoadFloat32s(x[_i:])
+					_t1 := _v1
+					_t2 := _t1.Neg().IfElse(_t1.Less(_vcFloat32s3_1), _t1)
+					_v1.Mul(_vcFloat32s3_2).Div(_t2.Add(_vcFloat32s3_3)).Add(_vcFloat32s3_2).Mul(_v1).Store(dst[_i:])
+				}
+				for _i < len(dst) {
+					_v2, _n := simd.LoadFloat32sPart(x[_i:])
+					_t3 := _v2
+					_t4 := _t3.Neg().IfElse(_t3.Less(_vcFloat32s3_1), _t3)
+					_v2.Mul(_vcFloat32s3_2).Div(_t4.Add(_vcFloat32s3_3)).Add(_vcFloat32s3_2).Mul(_v2).StorePart(dst[_i:])
+					_i += _n
+				}
 			}
 		}
 	}
@@ -247,13 +284,23 @@ func SiLUCubic(dst, x []float32) {
 	} else {
 		if len(dst) > 0 {
 			_ = x[len(dst)-1]
-			for _i := 0; _i < len(dst); {
-				_v1, _n := simd.LoadFloat32sPart(x[_i:])
-				_t1 := _v1
-				_t2 := _vcFloat32s4_1.IfElse(_t1.Less(_vcFloat32s4_1), _vcFloat32s4_3.IfElse(_t1.Greater(_vcFloat32s4_3), _t1))
-				_t3 := _t2.Div(_vcFloat32s4_6).Add(_vcFloat32s4_7).Sub(_t2.Mul(_t2).Mul(_t2).Div(_vcFloat32s4_5))
-				_v1.Mul(_t3).StorePart(dst[_i:])
-				_i += _n
+			{
+				_i := 0
+				for _lanes := simd.BroadcastFloat32s(0).Len(); _i <= len(dst)-_lanes; _i += _lanes {
+					_v1 := simd.LoadFloat32s(x[_i:])
+					_t1 := _v1
+					_t2 := _vcFloat32s4_1.IfElse(_t1.Less(_vcFloat32s4_1), _vcFloat32s4_3.IfElse(_t1.Greater(_vcFloat32s4_3), _t1))
+					_t3 := _t2.Div(_vcFloat32s4_6).Add(_vcFloat32s4_7).Sub(_t2.Mul(_t2).Mul(_t2).Div(_vcFloat32s4_5))
+					_v1.Mul(_t3).Store(dst[_i:])
+				}
+				for _i < len(dst) {
+					_v2, _n := simd.LoadFloat32sPart(x[_i:])
+					_t4 := _v2
+					_t5 := _vcFloat32s4_1.IfElse(_t4.Less(_vcFloat32s4_1), _vcFloat32s4_3.IfElse(_t4.Greater(_vcFloat32s4_3), _t4))
+					_t6 := _t5.Div(_vcFloat32s4_6).Add(_vcFloat32s4_7).Sub(_t5.Mul(_t5).Mul(_t5).Div(_vcFloat32s4_5))
+					_v2.Mul(_t6).StorePart(dst[_i:])
+					_i += _n
+				}
 			}
 		}
 	}
@@ -280,13 +327,23 @@ func Mixed(dst, x []float64) {
 	} else {
 		if len(dst) > 0 {
 			_ = x[len(dst)-1]
-			for _i := 0; _i < len(dst); {
-				_v1, _n := simd.LoadFloat64sPart(x[_i:])
-				_t1 := _v1.Mul(_vcFloat64s5_1)
-				_t2 := _t1.Add(_vcFloat64s5_2)
-				_t3 := _t1.Sub(_t2).IfElse(_t2.Greater(_vcFloat64s5_3).And(_t1.Less(_vcFloat64s5_4)), _t1.Neg().IfElse(_t2.Less(_vcFloat64s5_5), _t1))
-				_t3.Add(_t2).StorePart(dst[_i:])
-				_i += _n
+			{
+				_i := 0
+				for _lanes := simd.BroadcastFloat64s(0).Len(); _i <= len(dst)-_lanes; _i += _lanes {
+					_v1 := simd.LoadFloat64s(x[_i:])
+					_t1 := _v1.Mul(_vcFloat64s5_1)
+					_t2 := _t1.Add(_vcFloat64s5_2)
+					_t3 := _t1.Sub(_t2).IfElse(_t2.Greater(_vcFloat64s5_3).And(_t1.Less(_vcFloat64s5_4)), _t1.Neg().IfElse(_t2.Less(_vcFloat64s5_5), _t1))
+					_t3.Add(_t2).Store(dst[_i:])
+				}
+				for _i < len(dst) {
+					_v2, _n := simd.LoadFloat64sPart(x[_i:])
+					_t4 := _v2.Mul(_vcFloat64s5_1)
+					_t5 := _t4.Add(_vcFloat64s5_2)
+					_t6 := _t4.Sub(_t5).IfElse(_t5.Greater(_vcFloat64s5_3).And(_t4.Less(_vcFloat64s5_4)), _t4.Neg().IfElse(_t5.Less(_vcFloat64s5_5), _t4))
+					_t6.Add(_t5).StorePart(dst[_i:])
+					_i += _n
+				}
 			}
 		}
 	}

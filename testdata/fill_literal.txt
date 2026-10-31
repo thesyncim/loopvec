@@ -42,17 +42,29 @@ import "simd"
 
 func FillFloat64s(dst []float64) {
 	_vcFloat64s0 := simd.BroadcastFloat64s(2.5)
-	for _i := 0; _i < len(dst); {
-		_n := _vcFloat64s0.StorePart(dst[_i:])
-		_i += _n
+	{
+		_i := 0
+		for _lanes := simd.BroadcastFloat64s(0).Len(); _i <= len(dst)-_lanes; _i += _lanes {
+			_vcFloat64s0.Store(dst[_i:])
+		}
+		for _i < len(dst) {
+			_n := _vcFloat64s0.StorePart(dst[_i:])
+			_i += _n
+		}
 	}
 }
 
 func FillUint8s(dst []byte) {
 	_vcUint8s1 := simd.BroadcastUint8s(0xfe)
-	for _i := 0; _i < len(dst); {
-		_n := _vcUint8s1.StorePart(dst[_i:])
-		_i += _n
+	{
+		_i := 0
+		for _lanes := simd.BroadcastUint8s(0).Len(); _i <= len(dst)-_lanes; _i += _lanes {
+			_vcUint8s1.Store(dst[_i:])
+		}
+		for _i < len(dst) {
+			_n := _vcUint8s1.StorePart(dst[_i:])
+			_i += _n
+		}
 	}
 }
 -- stderr.want --

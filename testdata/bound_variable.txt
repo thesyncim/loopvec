@@ -48,11 +48,19 @@ func SaxpyN(n int, a float32, x, y []float32) {
 		if n > 0 {
 			_ = y[n-1]
 			_ = x[n-1]
-			for _i := 0; _i < n; {
-				_v1, _n := simd.LoadFloat32sPart(x[_i:n])
-				_v2, _ := simd.LoadFloat32sPart(y[_i:n])
-				_v1.MulAdd(_vcAFloat32s0, _v2).StorePart(y[_i:n])
-				_i += _n
+			{
+				_i := 0
+				for _lanes := simd.BroadcastFloat32s(0).Len(); _i <= n-_lanes; _i += _lanes {
+					_v1 := simd.LoadFloat32s(x[_i:n])
+					_v2 := simd.LoadFloat32s(y[_i:n])
+					_v1.MulAdd(_vcAFloat32s0, _v2).Store(y[_i:n])
+				}
+				for _i < n {
+					_v3, _n := simd.LoadFloat32sPart(x[_i:n])
+					_v4, _ := simd.LoadFloat32sPart(y[_i:n])
+					_v3.MulAdd(_vcAFloat32s0, _v4).StorePart(y[_i:n])
+					_i += _n
+				}
 			}
 		}
 	}

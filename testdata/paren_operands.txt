@@ -59,10 +59,17 @@ func Normalize(dst, a []float64, mean, inv float64) {
 	} else {
 		if len(dst) > 0 {
 			_ = a[len(dst)-1]
-			for _i := 0; _i < len(dst); {
-				_v1, _n := simd.LoadFloat64sPart(a[_i:])
-				_v1.Sub(_vcAFloat64s0).Mul(_vcBFloat64s0).StorePart(dst[_i:])
-				_i += _n
+			{
+				_i := 0
+				for _lanes := simd.BroadcastFloat64s(0).Len(); _i <= len(dst)-_lanes; _i += _lanes {
+					_v1 := simd.LoadFloat64s(a[_i:])
+					_v1.Sub(_vcAFloat64s0).Mul(_vcBFloat64s0).Store(dst[_i:])
+				}
+				for _i < len(dst) {
+					_v2, _n := simd.LoadFloat64sPart(a[_i:])
+					_v2.Sub(_vcAFloat64s0).Mul(_vcBFloat64s0).StorePart(dst[_i:])
+					_i += _n
+				}
 			}
 		}
 	}
@@ -78,11 +85,19 @@ func SumScaled(dst, a, b []float32, k float32) {
 		if len(dst) > 0 {
 			_ = a[len(dst)-1]
 			_ = b[len(dst)-1]
-			for _i := 0; _i < len(dst); {
-				_v1, _n := simd.LoadFloat32sPart(a[_i:])
-				_v2, _ := simd.LoadFloat32sPart(b[_i:])
-				_v1.Add(_v2).Mul(_vcBFloat32s1).StorePart(dst[_i:])
-				_i += _n
+			{
+				_i := 0
+				for _lanes := simd.BroadcastFloat32s(0).Len(); _i <= len(dst)-_lanes; _i += _lanes {
+					_v1 := simd.LoadFloat32s(a[_i:])
+					_v2 := simd.LoadFloat32s(b[_i:])
+					_v1.Add(_v2).Mul(_vcBFloat32s1).Store(dst[_i:])
+				}
+				for _i < len(dst) {
+					_v3, _n := simd.LoadFloat32sPart(a[_i:])
+					_v4, _ := simd.LoadFloat32sPart(b[_i:])
+					_v3.Add(_v4).Mul(_vcBFloat32s1).StorePart(dst[_i:])
+					_i += _n
+				}
 			}
 		}
 	}
@@ -97,11 +112,19 @@ func Parens(dst, a, b []int32) {
 		if len(dst) > 0 {
 			_ = a[len(dst)-1]
 			_ = b[len(dst)-1]
-			for _i := 0; _i < len(dst); {
-				_v1, _n := simd.LoadInt32sPart(a[_i:])
-				_v2, _ := simd.LoadInt32sPart(b[_i:])
-				_v1.Add(_v2).StorePart(dst[_i:])
-				_i += _n
+			{
+				_i := 0
+				for _lanes := simd.BroadcastInt32s(0).Len(); _i <= len(dst)-_lanes; _i += _lanes {
+					_v1 := simd.LoadInt32s(a[_i:])
+					_v2 := simd.LoadInt32s(b[_i:])
+					_v1.Add(_v2).Store(dst[_i:])
+				}
+				for _i < len(dst) {
+					_v3, _n := simd.LoadInt32sPart(a[_i:])
+					_v4, _ := simd.LoadInt32sPart(b[_i:])
+					_v3.Add(_v4).StorePart(dst[_i:])
+					_i += _n
+				}
 			}
 		}
 	}

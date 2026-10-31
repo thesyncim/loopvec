@@ -135,11 +135,19 @@ func AxpyRow(c, x []float32, alpha float32, row, n int) {
 		if n > 0 {
 			_ = c[n+row-1]
 			_ = x[n-1]
-			for _i := 0; _i < n; {
-				_v1, _n := simd.LoadFloat32sPart(x[_i:n])
-				_v2, _ := simd.LoadFloat32sPart(c[_i+row:])
-				_v1.MulAdd(_vcAFloat32s1, _v2).StorePart(c[_i+row : n+row])
-				_i += _n
+			{
+				_i := 0
+				for _lanes := simd.BroadcastFloat32s(0).Len(); _i <= n-_lanes; _i += _lanes {
+					_v1 := simd.LoadFloat32s(x[_i:n])
+					_v2 := simd.LoadFloat32s(c[_i+row:])
+					_v1.MulAdd(_vcAFloat32s1, _v2).Store(c[_i+row : n+row])
+				}
+				for _i < n {
+					_v3, _n := simd.LoadFloat32sPart(x[_i:n])
+					_v4, _ := simd.LoadFloat32sPart(c[_i+row:])
+					_v3.MulAdd(_vcAFloat32s1, _v4).StorePart(c[_i+row : n+row])
+					_i += _n
+				}
 			}
 		}
 	}
@@ -150,9 +158,15 @@ func FillAt(line []uint16, off, w int, v uint16) {
 	_vcUint16s2 := simd.BroadcastUint16s(v)
 	if w > 0 {
 		_ = line[w+off-1]
-		for _i := 0; _i < w; {
-			_n := _vcUint16s2.StorePart(line[_i+off : w+off])
-			_i += _n
+		{
+			_i := 0
+			for _lanes := simd.BroadcastUint16s(0).Len(); _i <= w-_lanes; _i += _lanes {
+				_vcUint16s2.Store(line[_i+off : w+off])
+			}
+			for _i < w {
+				_n := _vcUint16s2.StorePart(line[_i+off : w+off])
+				_i += _n
+			}
 		}
 	}
 }
@@ -168,10 +182,17 @@ func Behind(dst, a []int32, k int) {
 		if len(a) > k {
 			_ = dst[len(a)-(k)-1]
 			_ = a[len(a)-1]
-			for _i := k; _i < len(a); {
-				_v1, _n := simd.LoadInt32sPart(a[_i:len(a)])
-				_v1.Mul(_vcInt32s3).StorePart(dst[_i-(k) : len(a)-(k)])
-				_i += _n
+			{
+				_i := k
+				for _lanes := simd.BroadcastInt32s(0).Len(); _i <= len(a)-_lanes; _i += _lanes {
+					_v1 := simd.LoadInt32s(a[_i:len(a)])
+					_v1.Mul(_vcInt32s3).Store(dst[_i-(k) : len(a)-(k)])
+				}
+				for _i < len(a) {
+					_v2, _n := simd.LoadInt32sPart(a[_i:len(a)])
+					_v2.Mul(_vcInt32s3).StorePart(dst[_i-(k) : len(a)-(k)])
+					_i += _n
+				}
 			}
 		}
 	}
@@ -183,10 +204,17 @@ func Ahead(a []int32, n int) {
 	if n > 0 {
 		_ = a[n]
 		_ = a[n+2]
-		for _i := 0; _i < n; {
-			_v1, _n := simd.LoadInt32sPart(a[_i+3:])
-			_v1.Mul(_vcInt32s4).StorePart(a[_i+1 : n+1])
-			_i += _n
+		{
+			_i := 0
+			for _lanes := simd.BroadcastInt32s(0).Len(); _i <= n-_lanes; _i += _lanes {
+				_v1 := simd.LoadInt32s(a[_i+3:])
+				_v1.Mul(_vcInt32s4).Store(a[_i+1 : n+1])
+			}
+			for _i < n {
+				_v2, _n := simd.LoadInt32sPart(a[_i+3:])
+				_v2.Mul(_vcInt32s4).StorePart(a[_i+1 : n+1])
+				_i += _n
+			}
 		}
 	}
 }
@@ -196,10 +224,17 @@ func ClampAt(a []int16, off, n int) {
 	_vcAInt16s5 := simd.BroadcastInt16s(0)
 	if n > 0 {
 		_ = a[n+off-1]
-		for _i := 0; _i < n; {
-			_v1, _n := simd.LoadInt16sPart(a[_i+off:])
-			_vcAInt16s5.IfElse(_v1.Less(_vcAInt16s5), _v1).StorePart(a[_i+off : n+off])
-			_i += _n
+		{
+			_i := 0
+			for _lanes := simd.BroadcastInt16s(0).Len(); _i <= n-_lanes; _i += _lanes {
+				_v1 := simd.LoadInt16s(a[_i+off:])
+				_vcAInt16s5.IfElse(_v1.Less(_vcAInt16s5), _v1).Store(a[_i+off : n+off])
+			}
+			for _i < n {
+				_v2, _n := simd.LoadInt16sPart(a[_i+off:])
+				_vcAInt16s5.IfElse(_v2.Less(_vcAInt16s5), _v2).StorePart(a[_i+off : n+off])
+				_i += _n
+			}
 		}
 	}
 }
@@ -221,7 +256,7 @@ func SumCopy(d, a []int32, off int) int32 {
 				if len(a) >= 64 {
 					_a1 := simd.BroadcastInt32s(0)
 					_lanes := _a1.Len()
-					for ; _i+_lanes <= len(a); _i += _lanes {
+					for ; _i <= len(a)-_lanes; _i += _lanes {
 						_v1 := simd.LoadInt32s(a[_i:len(a)])
 						_a1 = _a1.Add(_v1)
 						_v1.Store(d[_i+off : len(a)+off])
@@ -254,12 +289,21 @@ func Twice(a, b []int32, off int) {
 		if len(b) > 0 {
 			_ = a[len(b)+off-1]
 			_ = b[len(b)-1]
-			for _i := 0; _i < len(b); {
-				_v1, _n := simd.LoadInt32sPart(b[_i:len(b)])
-				_v1.Add(_vcInt32s7_1).StorePart(a[_i+off : len(b)+off])
-				_v2, _ := simd.LoadInt32sPart(a[_i+off:])
-				_v2.Mul(_v1).StorePart(a[_i+off : len(b)+off])
-				_i += _n
+			{
+				_i := 0
+				for _lanes := simd.BroadcastInt32s(0).Len(); _i <= len(b)-_lanes; _i += _lanes {
+					_v1 := simd.LoadInt32s(b[_i:len(b)])
+					_v1.Add(_vcInt32s7_1).Store(a[_i+off : len(b)+off])
+					_v2 := simd.LoadInt32s(a[_i+off:])
+					_v2.Mul(_v1).Store(a[_i+off : len(b)+off])
+				}
+				for _i < len(b) {
+					_v3, _n := simd.LoadInt32sPart(b[_i:len(b)])
+					_v3.Add(_vcInt32s7_1).StorePart(a[_i+off : len(b)+off])
+					_v4, _ := simd.LoadInt32sPart(a[_i+off:])
+					_v4.Mul(_v3).StorePart(a[_i+off : len(b)+off])
+					_i += _n
+				}
 			}
 		}
 	}
@@ -275,11 +319,19 @@ func Reverse(dst, a []int32, off int) {
 		if len(a) > 0 {
 			_ = dst[len(a)+off-1]
 			_ = a[len(a)-1]
-			for _i := 0; _i < len(a); {
-				_v1, _n := simd.LoadInt32sPart(a[_i:len(a)])
-				_v2, _ := simd.LoadInt32sPart(dst[_i+off:])
-				_v1.Add(_v2).StorePart(dst[_i+off : len(a)+off])
-				_i += _n
+			{
+				_i := 0
+				for _lanes := simd.BroadcastInt32s(0).Len(); _i <= len(a)-_lanes; _i += _lanes {
+					_v1 := simd.LoadInt32s(a[_i:len(a)])
+					_v2 := simd.LoadInt32s(dst[_i+off:])
+					_v1.Add(_v2).Store(dst[_i+off : len(a)+off])
+				}
+				for _i < len(a) {
+					_v3, _n := simd.LoadInt32sPart(a[_i:len(a)])
+					_v4, _ := simd.LoadInt32sPart(dst[_i+off:])
+					_v3.Add(_v4).StorePart(dst[_i+off : len(a)+off])
+					_i += _n
+				}
 			}
 		}
 	}

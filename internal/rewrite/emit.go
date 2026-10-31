@@ -168,17 +168,29 @@ func lastIndex(limit, off string) string {
 }
 
 // loop generates the vector loop: for each statement in order, load each operand
-// a partial vector at a time, compute, and store it or keep it in a temporary.
-// The loop advances by the number of lanes the first load reported, or the first
-// store when nothing was loaded before it. Running one statement over the whole
-// vector before the next is the scalar order, because every access is at the loop
-// index.
+// a vector at a time, compute, and store it or keep it in a temporary. Whole
+// vectors are loaded and stored while one fits before the limit; what is left,
+// fewer than one vector, is one partial vector, which advances by the number of
+// lanes the first load reported, or the first store when nothing was loaded
+// before it. A partial load or store checks how many elements remain on every
+// call, which on a target without masked loads (arm64) costs more than the
+// operation itself, so it is kept out of the main loop. Running one statement
+// over the whole vector before the next is the scalar order, because every access
+// is at the loop index.
+//
+// The main loop runs while _i <= limit-_lanes rather than _i+_lanes <= limit:
+// with the length checks before the loop, the compiler then proves every
+// operand slice long enough and drops the bounds checks of slicing it.
 func (e *emitter) loop() string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "for _i := %s; _i < %s; {\n", e.plan.Start, e.limit())
+	fmt.Fprintf(&b, "{\n_i := %s\n", e.plan.Start)
+	fmt.Fprintf(&b, "for _lanes := simd.Broadcast%s(0).Len(); _i <= %s-_lanes; _i += _lanes {\n", e.plan.SimdType, operand(e.limit()))
+	e.statements(&b, true, 0, 1)
+	b.WriteString("}\n")
+	fmt.Fprintf(&b, "for _i < %s {\n", e.limit())
 	e.statements(&b, false, 0, 1)
 	b.WriteString("\t_i += _n\n")
-	b.WriteString("}")
+	b.WriteString("}\n}")
 	return b.String()
 }
 
@@ -317,13 +329,13 @@ func (e *emitter) fullLoop() (string, error) {
 	}
 	fmt.Fprintf(&b, "_lanes := %s.Len()\n", accName(1, 0, copies))
 	if copies > 1 {
-		fmt.Fprintf(&b, "for ; _i+%d*_lanes <= %s; _i += %d*_lanes {\n", copies, e.limit(), copies)
+		fmt.Fprintf(&b, "for ; _i <= %s-%d*_lanes; _i += %d*_lanes {\n", operand(e.limit()), copies, copies)
 		for k := range copies {
 			e.statements(&b, true, k, copies)
 		}
 		b.WriteString("}\n")
 	}
-	fmt.Fprintf(&b, "for ; _i+_lanes <= %s; _i += _lanes {\n", e.limit())
+	fmt.Fprintf(&b, "for ; _i <= %s-_lanes; _i += _lanes {\n", operand(e.limit()))
 	e.statements(&b, true, 0, copies)
 	b.WriteString("}\n")
 	for n, fold := range folds {

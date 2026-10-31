@@ -67,10 +67,17 @@ func ReluInt32s(dst, a []int32) {
 	} else {
 		if len(dst) > 0 {
 			_ = a[len(dst)-1]
-			for _i := 0; _i < len(dst); {
-				_v1, _n := simd.LoadInt32sPart(a[_i:])
-				_v1.Max(_vcInt32s0).StorePart(dst[_i:])
-				_i += _n
+			{
+				_i := 0
+				for _lanes := simd.BroadcastInt32s(0).Len(); _i <= len(dst)-_lanes; _i += _lanes {
+					_v1 := simd.LoadInt32s(a[_i:])
+					_v1.Max(_vcInt32s0).Store(dst[_i:])
+				}
+				for _i < len(dst) {
+					_v2, _n := simd.LoadInt32sPart(a[_i:])
+					_v2.Max(_vcInt32s0).StorePart(dst[_i:])
+					_i += _n
+				}
 			}
 		}
 	}
@@ -86,10 +93,17 @@ func ClampInt32s(dst, a []int32, lo, hi int32) {
 	} else {
 		if len(dst) > 0 {
 			_ = a[len(dst)-1]
-			for _i := 0; _i < len(dst); {
-				_v1, _n := simd.LoadInt32sPart(a[_i:])
-				_v1.Max(_vcAInt32s1).Min(_vcBInt32s1).StorePart(dst[_i:])
-				_i += _n
+			{
+				_i := 0
+				for _lanes := simd.BroadcastInt32s(0).Len(); _i <= len(dst)-_lanes; _i += _lanes {
+					_v1 := simd.LoadInt32s(a[_i:])
+					_v1.Max(_vcAInt32s1).Min(_vcBInt32s1).Store(dst[_i:])
+				}
+				for _i < len(dst) {
+					_v2, _n := simd.LoadInt32sPart(a[_i:])
+					_v2.Max(_vcAInt32s1).Min(_vcBInt32s1).StorePart(dst[_i:])
+					_i += _n
+				}
 			}
 		}
 	}
@@ -104,11 +118,19 @@ func MinUint8s(dst, a, b []uint8) {
 		if len(dst) > 0 {
 			_ = a[len(dst)-1]
 			_ = b[len(dst)-1]
-			for _i := 0; _i < len(dst); {
-				_v1, _n := simd.LoadUint8sPart(a[_i:])
-				_v2, _ := simd.LoadUint8sPart(b[_i:])
-				_v1.Min(_v2).StorePart(dst[_i:])
-				_i += _n
+			{
+				_i := 0
+				for _lanes := simd.BroadcastUint8s(0).Len(); _i <= len(dst)-_lanes; _i += _lanes {
+					_v1 := simd.LoadUint8s(a[_i:])
+					_v2 := simd.LoadUint8s(b[_i:])
+					_v1.Min(_v2).Store(dst[_i:])
+				}
+				for _i < len(dst) {
+					_v3, _n := simd.LoadUint8sPart(a[_i:])
+					_v4, _ := simd.LoadUint8sPart(b[_i:])
+					_v3.Min(_v4).StorePart(dst[_i:])
+					_i += _n
+				}
 			}
 		}
 	}
@@ -116,10 +138,17 @@ func MinUint8s(dst, a, b []uint8) {
 
 func FloorInt16s(a []int16, floor int16) {
 	_vcInt16s3 := simd.BroadcastInt16s(floor)
-	for _i := 0; _i < len(a); {
-		_v1, _n := simd.LoadInt16sPart(a[_i:])
-		_v1.Max(_vcInt16s3).StorePart(a[_i:])
-		_i += _n
+	{
+		_i := 0
+		for _lanes := simd.BroadcastInt16s(0).Len(); _i <= len(a)-_lanes; _i += _lanes {
+			_v1 := simd.LoadInt16s(a[_i:])
+			_v1.Max(_vcInt16s3).Store(a[_i:])
+		}
+		for _i < len(a) {
+			_v2, _n := simd.LoadInt16sPart(a[_i:])
+			_v2.Max(_vcInt16s3).StorePart(a[_i:])
+			_i += _n
+		}
 	}
 }
 

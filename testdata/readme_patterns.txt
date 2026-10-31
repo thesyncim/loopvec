@@ -14,7 +14,7 @@ stdout -count=1 '^--- \S+/a/ops\.go\t'
 stdout -count=1 '^\+\+\+ \S+/a/ops\.go\t'
 stdout -count=1 '^--- \S+/b/ops\.go\t'
 stdout -count=1 '^\+\+\+ \S+/b/ops\.go\t'
-stdout -count=2 '^@@ -1,7 \+1,43 @@$'
+stdout -count=2 '^@@ -1,7 \+1,51 @@$'
 cmpenv stderr both.stderr
 cmp a/ops.go a/ops.go.orig
 cmp b/ops.go b/ops.go.orig
@@ -101,11 +101,19 @@ func AddInt32s(dst, a, b []int32) {
 		if len(dst) > 0 {
 			_ = a[len(dst)-1]
 			_ = b[len(dst)-1]
-			for _i := 0; _i < len(dst); {
-				_v1, _n := simd.LoadInt32sPart(a[_i:])
-				_v2, _ := simd.LoadInt32sPart(b[_i:])
-				_v1.Add(_v2).StorePart(dst[_i:])
-				_i += _n
+			{
+				_i := 0
+				for _lanes := simd.BroadcastInt32s(0).Len(); _i <= len(dst)-_lanes; _i += _lanes {
+					_v1 := simd.LoadInt32s(a[_i:])
+					_v2 := simd.LoadInt32s(b[_i:])
+					_v1.Add(_v2).Store(dst[_i:])
+				}
+				for _i < len(dst) {
+					_v3, _n := simd.LoadInt32sPart(a[_i:])
+					_v4, _ := simd.LoadInt32sPart(b[_i:])
+					_v3.Add(_v4).StorePart(dst[_i:])
+					_i += _n
+				}
 			}
 		}
 	}
@@ -145,11 +153,19 @@ func AddInt32s(dst, a, b []int32) {
 		if len(dst) > 0 {
 			_ = a[len(dst)-1]
 			_ = b[len(dst)-1]
-			for _i := 0; _i < len(dst); {
-				_v1, _n := simd.LoadInt32sPart(a[_i:])
-				_v2, _ := simd.LoadInt32sPart(b[_i:])
-				_v1.Add(_v2).StorePart(dst[_i:])
-				_i += _n
+			{
+				_i := 0
+				for _lanes := simd.BroadcastInt32s(0).Len(); _i <= len(dst)-_lanes; _i += _lanes {
+					_v1 := simd.LoadInt32s(a[_i:])
+					_v2 := simd.LoadInt32s(b[_i:])
+					_v1.Add(_v2).Store(dst[_i:])
+				}
+				for _i < len(dst) {
+					_v3, _n := simd.LoadInt32sPart(a[_i:])
+					_v4, _ := simd.LoadInt32sPart(b[_i:])
+					_v3.Add(_v4).StorePart(dst[_i:])
+					_i += _n
+				}
 			}
 		}
 	}
@@ -188,11 +204,19 @@ func AddInt32s(dst, a, b []int32) {
 		if len(dst) > 0 {
 			_ = a[len(dst)-1]
 			_ = b[len(dst)-1]
-			for _i := 0; _i < len(dst); {
-				_v1, _n := simd.LoadInt32sPart(a[_i:])
-				_v2, _ := simd.LoadInt32sPart(b[_i:])
-				_v1.Add(_v2).StorePart(dst[_i:])
-				_i += _n
+			{
+				_i := 0
+				for _lanes := simd.BroadcastInt32s(0).Len(); _i <= len(dst)-_lanes; _i += _lanes {
+					_v1 := simd.LoadInt32s(a[_i:])
+					_v2 := simd.LoadInt32s(b[_i:])
+					_v1.Add(_v2).Store(dst[_i:])
+				}
+				for _i < len(dst) {
+					_v3, _n := simd.LoadInt32sPart(a[_i:])
+					_v4, _ := simd.LoadInt32sPart(b[_i:])
+					_v3.Add(_v4).StorePart(dst[_i:])
+					_i += _n
+				}
 			}
 		}
 	}

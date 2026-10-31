@@ -34,9 +34,15 @@ func Mixed(a, b []float64) {
 		a[i] = 0
 	}
 	_vcFloat64s0 := simd.BroadcastFloat64s(1)
-	for _i := 0; _i < len(b); {
-		_n := _vcFloat64s0.StorePart(b[_i:])
-		_i += _n
+	{
+		_i := 0
+		for _lanes := simd.BroadcastFloat64s(0).Len(); _i <= len(b)-_lanes; _i += _lanes {
+			_vcFloat64s0.Store(b[_i:])
+		}
+		for _i < len(b) {
+			_n := _vcFloat64s0.StorePart(b[_i:])
+			_i += _n
+		}
 	}
 }
 -- stderr.want --

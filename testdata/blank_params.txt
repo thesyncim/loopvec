@@ -30,9 +30,15 @@ import "simd"
 
 func FillBlankParams(_p0 int, _p1 byte, dst []float32) {
 	_vcFloat32s0 := simd.BroadcastFloat32s(1)
-	for _i := 0; _i < len(dst); {
-		_n := _vcFloat32s0.StorePart(dst[_i:])
-		_i += _n
+	{
+		_i := 0
+		for _lanes := simd.BroadcastFloat32s(0).Len(); _i <= len(dst)-_lanes; _i += _lanes {
+			_vcFloat32s0.Store(dst[_i:])
+		}
+		for _i < len(dst) {
+			_n := _vcFloat32s0.StorePart(dst[_i:])
+			_i += _n
+		}
 	}
 }
 -- stderr.want --

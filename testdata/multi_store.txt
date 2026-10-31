@@ -69,12 +69,21 @@ func Two(a, b, x, y []float32) {
 			_ = x[len(a)-1]
 			_ = y[len(a)-1]
 			_ = b[len(a)-1]
-			for _i := 0; _i < len(a); {
-				_v1, _n := simd.LoadFloat32sPart(x[_i:len(a)])
-				_v2, _ := simd.LoadFloat32sPart(y[_i:len(a)])
-				_v1.Add(_v2).StorePart(a[_i:len(a)])
-				_v1.Mul(_v2).StorePart(b[_i:len(a)])
-				_i += _n
+			{
+				_i := 0
+				for _lanes := simd.BroadcastFloat32s(0).Len(); _i <= len(a)-_lanes; _i += _lanes {
+					_v1 := simd.LoadFloat32s(x[_i:len(a)])
+					_v2 := simd.LoadFloat32s(y[_i:len(a)])
+					_v1.Add(_v2).Store(a[_i:len(a)])
+					_v1.Mul(_v2).Store(b[_i:len(a)])
+				}
+				for _i < len(a) {
+					_v3, _n := simd.LoadFloat32sPart(x[_i:len(a)])
+					_v4, _ := simd.LoadFloat32sPart(y[_i:len(a)])
+					_v3.Add(_v4).StorePart(a[_i:len(a)])
+					_v3.Mul(_v4).StorePart(b[_i:len(a)])
+					_i += _n
+				}
 			}
 		}
 	}
@@ -92,13 +101,23 @@ func Chain(a, b, c []int32) {
 			_ = a[len(a)-1]
 			_ = c[len(a)-1]
 			_ = b[len(a)-1]
-			for _i := 0; _i < len(a); {
-				_v1, _n := simd.LoadInt32sPart(a[_i:len(a)])
-				_v2, _ := simd.LoadInt32sPart(c[_i:len(a)])
-				_v1.Add(_v2).StorePart(a[_i:len(a)])
-				_v3, _ := simd.LoadInt32sPart(a[_i:len(a)])
-				_v3.Mul(_vcInt32s1_1).StorePart(b[_i:len(a)])
-				_i += _n
+			{
+				_i := 0
+				for _lanes := simd.BroadcastInt32s(0).Len(); _i <= len(a)-_lanes; _i += _lanes {
+					_v1 := simd.LoadInt32s(a[_i:len(a)])
+					_v2 := simd.LoadInt32s(c[_i:len(a)])
+					_v1.Add(_v2).Store(a[_i:len(a)])
+					_v3 := simd.LoadInt32s(a[_i:len(a)])
+					_v3.Mul(_vcInt32s1_1).Store(b[_i:len(a)])
+				}
+				for _i < len(a) {
+					_v4, _n := simd.LoadInt32sPart(a[_i:len(a)])
+					_v5, _ := simd.LoadInt32sPart(c[_i:len(a)])
+					_v4.Add(_v5).StorePart(a[_i:len(a)])
+					_v6, _ := simd.LoadInt32sPart(a[_i:len(a)])
+					_v6.Mul(_vcInt32s1_1).StorePart(b[_i:len(a)])
+					_i += _n
+				}
 			}
 		}
 	}
@@ -116,11 +135,19 @@ func Fill(a, b, x []float64, n int) {
 			_ = a[n-1]
 			_ = x[n-1]
 			_ = b[n-1]
-			for _i := 0; _i < n; {
-				_v1, _n := simd.LoadFloat64sPart(x[_i:n])
-				_v1.StorePart(a[_i:n])
-				_vcFloat64s2_1.StorePart(b[_i:n])
-				_i += _n
+			{
+				_i := 0
+				for _lanes := simd.BroadcastFloat64s(0).Len(); _i <= n-_lanes; _i += _lanes {
+					_v1 := simd.LoadFloat64s(x[_i:n])
+					_v1.Store(a[_i:n])
+					_vcFloat64s2_1.Store(b[_i:n])
+				}
+				for _i < n {
+					_v2, _n := simd.LoadFloat64sPart(x[_i:n])
+					_v2.StorePart(a[_i:n])
+					_vcFloat64s2_1.StorePart(b[_i:n])
+					_i += _n
+				}
 			}
 		}
 	}

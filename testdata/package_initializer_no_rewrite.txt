@@ -43,10 +43,17 @@ var spaces = func() string {
 
 func Xor(x byte, b []byte) {
 	_vcUint8s0 := simd.BroadcastUint8s(x)
-	for _i := 0; _i < len(b); {
-		_v1, _n := simd.LoadUint8sPart(b[_i:])
-		_v1.Xor(_vcUint8s0).StorePart(b[_i:])
-		_i += _n
+	{
+		_i := 0
+		for _lanes := simd.BroadcastUint8s(0).Len(); _i <= len(b)-_lanes; _i += _lanes {
+			_v1 := simd.LoadUint8s(b[_i:])
+			_v1.Xor(_vcUint8s0).Store(b[_i:])
+		}
+		for _i < len(b) {
+			_v2, _n := simd.LoadUint8sPart(b[_i:])
+			_v2.Xor(_vcUint8s0).StorePart(b[_i:])
+			_i += _n
+		}
 	}
 }
 -- stderr.want --

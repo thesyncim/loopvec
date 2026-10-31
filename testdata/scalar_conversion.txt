@@ -37,10 +37,17 @@ import "simd"
 
 func Centroid(sum []float64, dim int) {
 	_vcFloat64s0 := simd.BroadcastFloat64s(float64(dim))
-	for _i := 0; _i < len(sum); {
-		_v1, _n := simd.LoadFloat64sPart(sum[_i:])
-		_v1.Div(_vcFloat64s0).StorePart(sum[_i:])
-		_i += _n
+	{
+		_i := 0
+		for _lanes := simd.BroadcastFloat64s(0).Len(); _i <= len(sum)-_lanes; _i += _lanes {
+			_v1 := simd.LoadFloat64s(sum[_i:])
+			_v1.Div(_vcFloat64s0).Store(sum[_i:])
+		}
+		for _i < len(sum) {
+			_v2, _n := simd.LoadFloat64sPart(sum[_i:])
+			_v2.Div(_vcFloat64s0).StorePart(sum[_i:])
+			_i += _n
+		}
 	}
 }
 -- testmain/main.go --

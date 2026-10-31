@@ -46,10 +46,17 @@ func NegFloat32s(dst, src []float32) {
 	} else {
 		if len(dst) > 0 {
 			_ = src[len(dst)-1]
-			for _i := 0; _i < len(dst); {
-				_v1, _n := simd.LoadFloat32sPart(src[_i:])
-				_v1.Neg().StorePart(dst[_i:])
-				_i += _n
+			{
+				_i := 0
+				for _lanes := simd.BroadcastFloat32s(0).Len(); _i <= len(dst)-_lanes; _i += _lanes {
+					_v1 := simd.LoadFloat32s(src[_i:])
+					_v1.Neg().Store(dst[_i:])
+				}
+				for _i < len(dst) {
+					_v2, _n := simd.LoadFloat32sPart(src[_i:])
+					_v2.Neg().StorePart(dst[_i:])
+					_i += _n
+				}
 			}
 		}
 	}

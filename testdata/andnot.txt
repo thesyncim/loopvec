@@ -71,11 +71,19 @@ func AndNotUint64s(dst, a, b []uint64) {
 		if len(dst) > 0 {
 			_ = a[len(dst)-1]
 			_ = b[len(dst)-1]
-			for _i := 0; _i < len(dst); {
-				_v1, _n := simd.LoadUint64sPart(a[_i:])
-				_v2, _ := simd.LoadUint64sPart(b[_i:])
-				_v1.AndNot(_v2).StorePart(dst[_i:])
-				_i += _n
+			{
+				_i := 0
+				for _lanes := simd.BroadcastUint64s(0).Len(); _i <= len(dst)-_lanes; _i += _lanes {
+					_v1 := simd.LoadUint64s(a[_i:])
+					_v2 := simd.LoadUint64s(b[_i:])
+					_v1.AndNot(_v2).Store(dst[_i:])
+				}
+				for _i < len(dst) {
+					_v3, _n := simd.LoadUint64sPart(a[_i:])
+					_v4, _ := simd.LoadUint64sPart(b[_i:])
+					_v3.AndNot(_v4).StorePart(dst[_i:])
+					_i += _n
+				}
 			}
 		}
 	}
@@ -89,11 +97,19 @@ func AndNotInPlace(dst []int32, mask []int32) {
 	} else {
 		if len(dst) > 0 {
 			_ = mask[len(dst)-1]
-			for _i := 0; _i < len(dst); {
-				_v1, _n := simd.LoadInt32sPart(dst[_i:])
-				_v2, _ := simd.LoadInt32sPart(mask[_i:])
-				_v1.AndNot(_v2).StorePart(dst[_i:])
-				_i += _n
+			{
+				_i := 0
+				for _lanes := simd.BroadcastInt32s(0).Len(); _i <= len(dst)-_lanes; _i += _lanes {
+					_v1 := simd.LoadInt32s(dst[_i:])
+					_v2 := simd.LoadInt32s(mask[_i:])
+					_v1.AndNot(_v2).Store(dst[_i:])
+				}
+				for _i < len(dst) {
+					_v3, _n := simd.LoadInt32sPart(dst[_i:])
+					_v4, _ := simd.LoadInt32sPart(mask[_i:])
+					_v3.AndNot(_v4).StorePart(dst[_i:])
+					_i += _n
+				}
 			}
 		}
 	}
@@ -108,10 +124,17 @@ func AndNotScalar(dst, a []byte, mask byte) {
 	} else {
 		if len(dst) > 0 {
 			_ = a[len(dst)-1]
-			for _i := 0; _i < len(dst); {
-				_v1, _n := simd.LoadUint8sPart(a[_i:])
-				_v1.AndNot(_vcUint8s2).StorePart(dst[_i:])
-				_i += _n
+			{
+				_i := 0
+				for _lanes := simd.BroadcastUint8s(0).Len(); _i <= len(dst)-_lanes; _i += _lanes {
+					_v1 := simd.LoadUint8s(a[_i:])
+					_v1.AndNot(_vcUint8s2).Store(dst[_i:])
+				}
+				for _i < len(dst) {
+					_v2, _n := simd.LoadUint8sPart(a[_i:])
+					_v2.AndNot(_vcUint8s2).StorePart(dst[_i:])
+					_i += _n
+				}
 			}
 		}
 	}
@@ -126,11 +149,19 @@ func Feasible(feasible, used, adjacent Colors) {
 		if len(feasible) > 0 {
 			_ = used[len(feasible)-1]
 			_ = adjacent[len(feasible)-1]
-			for _i := 0; _i < len(feasible); {
-				_v1, _n := simd.LoadUint64sPart(used[_i:])
-				_v2, _ := simd.LoadUint64sPart(adjacent[_i:])
-				_v1.AndNot(_v2).StorePart(feasible[_i:])
-				_i += _n
+			{
+				_i := 0
+				for _lanes := simd.BroadcastUint64s(0).Len(); _i <= len(feasible)-_lanes; _i += _lanes {
+					_v1 := simd.LoadUint64s(used[_i:])
+					_v2 := simd.LoadUint64s(adjacent[_i:])
+					_v1.AndNot(_v2).Store(feasible[_i:])
+				}
+				for _i < len(feasible) {
+					_v3, _n := simd.LoadUint64sPart(used[_i:])
+					_v4, _ := simd.LoadUint64sPart(adjacent[_i:])
+					_v3.AndNot(_v4).StorePart(feasible[_i:])
+					_i += _n
+				}
 			}
 		}
 	}

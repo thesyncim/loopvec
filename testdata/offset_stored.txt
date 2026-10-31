@@ -88,11 +88,19 @@ func ShiftAdd(a, b []int32) {
 			_ = a[(len(a)-1)-1]
 			_ = a[len(a)-1]
 			_ = b[(len(a)-1)-1]
-			for _i := 0; _i < len(a)-1; {
-				_v1, _n := simd.LoadInt32sPart(a[_i+1:])
-				_v2, _ := simd.LoadInt32sPart(b[_i : len(a)-1])
-				_v1.Add(_v2).StorePart(a[_i : len(a)-1])
-				_i += _n
+			{
+				_i := 0
+				for _lanes := simd.BroadcastInt32s(0).Len(); _i <= (len(a)-1)-_lanes; _i += _lanes {
+					_v1 := simd.LoadInt32s(a[_i+1:])
+					_v2 := simd.LoadInt32s(b[_i : len(a)-1])
+					_v1.Add(_v2).Store(a[_i : len(a)-1])
+				}
+				for _i < len(a)-1 {
+					_v3, _n := simd.LoadInt32sPart(a[_i+1:])
+					_v4, _ := simd.LoadInt32sPart(b[_i : len(a)-1])
+					_v3.Add(_v4).StorePart(a[_i : len(a)-1])
+					_i += _n
+				}
 			}
 		}
 	}
@@ -122,16 +130,29 @@ func ReadAfterStore(a, b, d []int32) {
 			_ = b[(len(a)-1)-1]
 			_ = d[(len(a)-1)-1]
 			_ = a[len(a)-1]
-			for _i := 0; _i < len(a)-1; {
-				_v1, _n := simd.LoadInt32sPart(a[_i+1:])
-				_v2, _ := simd.LoadInt32sPart(b[_i : len(a)-1])
-				_v3, _ := simd.LoadInt32sPart(d[_i : len(a)-1])
-				_v2.Add(_v3).StorePart(a[_i : len(a)-1])
-				_v4, _ := simd.LoadInt32sPart(a[_i : len(a)-1])
-				_v4.Mul(_vcInt32s2_1).StorePart(b[_i : len(a)-1])
-				_v5, _ := simd.LoadInt32sPart(b[_i : len(a)-1])
-				_v1.Mul(_v3).Add(_v5).StorePart(a[_i : len(a)-1])
-				_i += _n
+			{
+				_i := 0
+				for _lanes := simd.BroadcastInt32s(0).Len(); _i <= (len(a)-1)-_lanes; _i += _lanes {
+					_v1 := simd.LoadInt32s(a[_i+1:])
+					_v2 := simd.LoadInt32s(b[_i : len(a)-1])
+					_v3 := simd.LoadInt32s(d[_i : len(a)-1])
+					_v2.Add(_v3).Store(a[_i : len(a)-1])
+					_v4 := simd.LoadInt32s(a[_i : len(a)-1])
+					_v4.Mul(_vcInt32s2_1).Store(b[_i : len(a)-1])
+					_v5 := simd.LoadInt32s(b[_i : len(a)-1])
+					_v1.Mul(_v3).Add(_v5).Store(a[_i : len(a)-1])
+				}
+				for _i < len(a)-1 {
+					_v6, _n := simd.LoadInt32sPart(a[_i+1:])
+					_v7, _ := simd.LoadInt32sPart(b[_i : len(a)-1])
+					_v8, _ := simd.LoadInt32sPart(d[_i : len(a)-1])
+					_v7.Add(_v8).StorePart(a[_i : len(a)-1])
+					_v9, _ := simd.LoadInt32sPart(a[_i : len(a)-1])
+					_v9.Mul(_vcInt32s2_1).StorePart(b[_i : len(a)-1])
+					_v10, _ := simd.LoadInt32sPart(b[_i : len(a)-1])
+					_v6.Mul(_v8).Add(_v10).StorePart(a[_i : len(a)-1])
+					_i += _n
+				}
 			}
 		}
 	}
@@ -151,13 +172,23 @@ func Pair(a, x, y []int32) {
 			_ = a[(len(a)-2)-1]
 			_ = y[(len(a)-2)-1]
 			_ = a[len(a)-2]
-			for _i := 0; _i < len(a)-2; {
-				_v1, _n := simd.LoadInt32sPart(a[_i+2:])
-				_v2, _ := simd.LoadInt32sPart(a[_i+1:])
-				_v1.StorePart(x[_i : len(a)-2])
-				_v3, _ := simd.LoadInt32sPart(y[_i : len(a)-2])
-				_v3.Add(_v2).StorePart(a[_i : len(a)-2])
-				_i += _n
+			{
+				_i := 0
+				for _lanes := simd.BroadcastInt32s(0).Len(); _i <= (len(a)-2)-_lanes; _i += _lanes {
+					_v1 := simd.LoadInt32s(a[_i+2:])
+					_v2 := simd.LoadInt32s(a[_i+1:])
+					_v1.Store(x[_i : len(a)-2])
+					_v3 := simd.LoadInt32s(y[_i : len(a)-2])
+					_v3.Add(_v2).Store(a[_i : len(a)-2])
+				}
+				for _i < len(a)-2 {
+					_v4, _n := simd.LoadInt32sPart(a[_i+2:])
+					_v5, _ := simd.LoadInt32sPart(a[_i+1:])
+					_v4.StorePart(x[_i : len(a)-2])
+					_v6, _ := simd.LoadInt32sPart(y[_i : len(a)-2])
+					_v6.Add(_v5).StorePart(a[_i : len(a)-2])
+					_i += _n
+				}
 			}
 		}
 	}
@@ -174,11 +205,19 @@ func AddHalf(b, xx, a []int32) {
 			_ = b[(len(b)/2)-1]
 			_ = xx[(len(b)/2)-1]
 			_ = a[(len(b)/2)-1]
-			for _i := 0; _i < len(b)/2; {
-				_v1, _n := simd.LoadInt32sPart(xx[_i : len(b)/2])
-				_v2, _ := simd.LoadInt32sPart(a[_i : len(b)/2])
-				_v1.Add(_v2).StorePart(b[_i : len(b)/2])
-				_i += _n
+			{
+				_i := 0
+				for _lanes := simd.BroadcastInt32s(0).Len(); _i <= (len(b)/2)-_lanes; _i += _lanes {
+					_v1 := simd.LoadInt32s(xx[_i : len(b)/2])
+					_v2 := simd.LoadInt32s(a[_i : len(b)/2])
+					_v1.Add(_v2).Store(b[_i : len(b)/2])
+				}
+				for _i < len(b)/2 {
+					_v3, _n := simd.LoadInt32sPart(xx[_i : len(b)/2])
+					_v4, _ := simd.LoadInt32sPart(a[_i : len(b)/2])
+					_v3.Add(_v4).StorePart(b[_i : len(b)/2])
+					_i += _n
+				}
 			}
 		}
 	}

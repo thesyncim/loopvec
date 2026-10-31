@@ -44,11 +44,19 @@ func DivFloat64s(dst, a, b []float64) {
 		if len(dst) > 0 {
 			_ = a[len(dst)-1]
 			_ = b[len(dst)-1]
-			for _i := 0; _i < len(dst); {
-				_v1, _n := simd.LoadFloat64sPart(a[_i:])
-				_v2, _ := simd.LoadFloat64sPart(b[_i:])
-				_v1.Div(_v2).StorePart(dst[_i:])
-				_i += _n
+			{
+				_i := 0
+				for _lanes := simd.BroadcastFloat64s(0).Len(); _i <= len(dst)-_lanes; _i += _lanes {
+					_v1 := simd.LoadFloat64s(a[_i:])
+					_v2 := simd.LoadFloat64s(b[_i:])
+					_v1.Div(_v2).Store(dst[_i:])
+				}
+				for _i < len(dst) {
+					_v3, _n := simd.LoadFloat64sPart(a[_i:])
+					_v4, _ := simd.LoadFloat64sPart(b[_i:])
+					_v3.Div(_v4).StorePart(dst[_i:])
+					_i += _n
+				}
 			}
 		}
 	}

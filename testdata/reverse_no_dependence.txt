@@ -48,10 +48,17 @@ func FillFromReverse(a, b []float32) {
 	} else {
 		if len(a) > 0 {
 			_ = b[len(a)-1]
-			for _i := 0; _i < len(a); {
-				_v1, _n := simd.LoadFloat32sPart(b[_i:])
-				_v1.Add(_vcFloat32s0).StorePart(a[_i:])
-				_i += _n
+			{
+				_i := 0
+				for _lanes := simd.BroadcastFloat32s(0).Len(); _i <= len(a)-_lanes; _i += _lanes {
+					_v1 := simd.LoadFloat32s(b[_i:])
+					_v1.Add(_vcFloat32s0).Store(a[_i:])
+				}
+				for _i < len(a) {
+					_v2, _n := simd.LoadFloat32sPart(b[_i:])
+					_v2.Add(_vcFloat32s0).StorePart(a[_i:])
+					_i += _n
+				}
 			}
 		}
 	}

@@ -137,7 +137,7 @@ func Sum(a []int32, init int32) int32 {
 		if len(a) >= 64 {
 			_a1 := simd.BroadcastInt32s(0)
 			_lanes := _a1.Len()
-			for ; _i+_lanes <= len(a); _i += _lanes {
+			for ; _i <= len(a)-_lanes; _i += _lanes {
 				_v1 := simd.LoadInt32s(a[_i:])
 				_a1 = _a1.Add(_v1)
 			}
@@ -164,7 +164,7 @@ func Dot(a, b []uint16) uint16 {
 			if len(a) >= 128 {
 				_a1 := simd.BroadcastUint16s(0)
 				_lanes := _a1.Len()
-				for ; _i+_lanes <= len(a); _i += _lanes {
+				for ; _i <= len(a)-_lanes; _i += _lanes {
 					_v1 := simd.LoadUint16s(a[_i:])
 					_v2 := simd.LoadUint16s(b[_i:])
 					_a1 = _a1.Add(_v1.Mul(_v2))
@@ -191,7 +191,7 @@ func Min(a []int32) int32 {
 		if len(a) >= 64 {
 			_a1 := simd.BroadcastInt32s(2147483647)
 			_lanes := _a1.Len()
-			for ; _i+_lanes <= len(a); _i += _lanes {
+			for ; _i <= len(a)-_lanes; _i += _lanes {
 				_v1 := simd.LoadInt32s(a[_i:])
 				_a1 = _a1.Min(_v1)
 			}
@@ -215,7 +215,7 @@ func Max(a []int8) int8 {
 		if len(a) >= 256 {
 			_a1 := simd.BroadcastInt8s(-128)
 			_lanes := _a1.Len()
-			for ; _i+_lanes <= len(a); _i += _lanes {
+			for ; _i <= len(a)-_lanes; _i += _lanes {
 				_v1 := simd.LoadInt8s(a[_i:])
 				_a1 = _a1.Max(_v1)
 			}
@@ -239,7 +239,7 @@ func And(a []uint8) uint8 {
 		if len(a) >= 256 {
 			_a1 := simd.BroadcastUint8s(255)
 			_lanes := _a1.Len()
-			for ; _i+_lanes <= len(a); _i += _lanes {
+			for ; _i <= len(a)-_lanes; _i += _lanes {
 				_v1 := simd.LoadUint8s(a[_i:])
 				_a1 = _a1.And(_v1)
 			}
@@ -265,7 +265,7 @@ func Xor(a, b []uint64) uint64 {
 			if len(a) >= 32 {
 				_a1 := simd.BroadcastUint64s(0)
 				_lanes := _a1.Len()
-				for ; _i+_lanes <= len(a); _i += _lanes {
+				for ; _i <= len(a)-_lanes; _i += _lanes {
 					_v1 := simd.LoadUint64s(a[_i:])
 					_v2 := simd.LoadUint64s(b[_i:])
 					_a1 = _a1.Xor(_v1.Add(_v2))
@@ -291,7 +291,7 @@ func Product(a []uint32) uint32 {
 		if len(a) >= 64 {
 			_a1 := simd.BroadcastUint32s(1)
 			_lanes := _a1.Len()
-			for ; _i+_lanes <= len(a); _i += _lanes {
+			for ; _i <= len(a)-_lanes; _i += _lanes {
 				_v1 := simd.LoadUint32s(a[_i:])
 				_a1 = _a1.Mul(_v1)
 			}
@@ -318,7 +318,7 @@ func SumN(a []int64, n int) int64 {
 			if n >= 32 {
 				_a1 := simd.BroadcastInt64s(0)
 				_lanes := _a1.Len()
-				for ; _i+_lanes <= n; _i += _lanes {
+				for ; _i <= n-_lanes; _i += _lanes {
 					_v1 := simd.LoadInt64s(a[_i:])
 					_a1 = _a1.Add(_v1)
 				}
@@ -343,7 +343,7 @@ func SumReverse(a []int16) int16 {
 		if len(a) >= 128 {
 			_a1 := simd.BroadcastInt16s(0)
 			_lanes := _a1.Len()
-			for ; _i+_lanes <= len(a); _i += _lanes {
+			for ; _i <= len(a)-_lanes; _i += _lanes {
 				_v1 := simd.LoadInt16s(a[_i:])
 				_a1 = _a1.Add(_v1)
 			}
@@ -377,7 +377,7 @@ func SumAndScale(dst, a []int32) int32 {
 				if len(dst) >= 64 {
 					_a1 := simd.BroadcastInt32s(0)
 					_lanes := _a1.Len()
-					for ; _i+_lanes <= len(dst); _i += _lanes {
+					for ; _i <= len(dst)-_lanes; _i += _lanes {
 						_v1 := simd.LoadInt32s(a[_i:])
 						_v1.Mul(_vcInt32s9_1).Store(dst[_i:])
 						_v2 := simd.LoadInt32s(dst[_i:])
@@ -407,7 +407,7 @@ func SumValues(a []int32) int32 {
 		if len(a) >= 64 {
 			_a1 := simd.BroadcastInt32s(0)
 			_lanes := _a1.Len()
-			for ; _i+_lanes <= len(a); _i += _lanes {
+			for ; _i <= len(a)-_lanes; _i += _lanes {
 				_v1 := simd.LoadInt32s(a[_i:])
 				_a1 = _a1.Add(_v1)
 			}

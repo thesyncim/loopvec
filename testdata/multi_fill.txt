@@ -35,19 +35,37 @@ import "simd"
 
 func FillAll(a, b, c []float64) {
 	_vcFloat64s0 := simd.BroadcastFloat64s(1)
-	for _i := 0; _i < len(a); {
-		_n := _vcFloat64s0.StorePart(a[_i:])
-		_i += _n
+	{
+		_i := 0
+		for _lanes := simd.BroadcastFloat64s(0).Len(); _i <= len(a)-_lanes; _i += _lanes {
+			_vcFloat64s0.Store(a[_i:])
+		}
+		for _i < len(a) {
+			_n := _vcFloat64s0.StorePart(a[_i:])
+			_i += _n
+		}
 	}
 	_vcFloat64s1 := simd.BroadcastFloat64s(2)
-	for _i := 0; _i < len(b); {
-		_n := _vcFloat64s1.StorePart(b[_i:])
-		_i += _n
+	{
+		_i := 0
+		for _lanes := simd.BroadcastFloat64s(0).Len(); _i <= len(b)-_lanes; _i += _lanes {
+			_vcFloat64s1.Store(b[_i:])
+		}
+		for _i < len(b) {
+			_n := _vcFloat64s1.StorePart(b[_i:])
+			_i += _n
+		}
 	}
 	_vcFloat64s2 := simd.BroadcastFloat64s(3)
-	for _i := 0; _i < len(c); {
-		_n := _vcFloat64s2.StorePart(c[_i:])
-		_i += _n
+	{
+		_i := 0
+		for _lanes := simd.BroadcastFloat64s(0).Len(); _i <= len(c)-_lanes; _i += _lanes {
+			_vcFloat64s2.Store(c[_i:])
+		}
+		for _i < len(c) {
+			_n := _vcFloat64s2.StorePart(c[_i:])
+			_i += _n
+		}
 	}
 }
 -- stderr.want --
