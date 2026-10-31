@@ -1,0 +1,59 @@
+# A read at a negative constant offset is rewritten while every index it reads can
+# be zero or more. When an index is a negative constant, the first one in a loop
+# with a constant start (a[i-1] from 0) or every one in a loop with a constant limit
+# (a[i-16] in a loop that stops before 16), the scalar loop panics when it runs and
+# the vector loop would index at a negative constant, which does not compile, so the
+# loop is left alone. The rewritten package must build.
+
+loopvec -json .
+cmpenv stdout stdout.want
+
+loopvec -split .
+cmpenv stderr stderr.want
+env GOEXPERIMENT=simd
+exec go build .
+
+-- go.mod --
+module example.com/test
+
+go 1.27.1
+-- ops.go --
+package test
+
+func FirstIndexZeroConstant(dst, a []int32) {
+	for i := 15; i < 31; i++ {
+		dst[i] = a[i-15] + 1
+	}
+}
+
+func EveryIndexNegative(dst, a []int32) {
+	for i := 0; i < 16; i++ {
+		dst[i] = a[i-16] + 1
+	}
+}
+
+func FarBelow(dst, a []float32) {
+	for i := 0; i < 16; i++ {
+		dst[i] = a[i-20] * a[i]
+	}
+}
+
+func FirstIndexNegative(dst, a []int32, n int) {
+	for i := 0; i < n; i++ {
+		dst[i] = a[i-1] * 3
+	}
+}
+
+func FirstIndexZero(dst, a []int32, n int) {
+	for i := 1; i < n; i++ {
+		dst[i] = a[i-1] * 3
+	}
+}
+-- stdout.want --
+{"file":"$WORK/ops.go","line":4,"func":"FirstIndexZeroConstant","vectorized":true}
+{"file":"$WORK/ops.go","line":10,"func":"EveryIndexNegative","vectorized":false,"reason":"a constant offset puts an index below zero","stage":"lower"}
+{"file":"$WORK/ops.go","line":16,"func":"FarBelow","vectorized":false,"reason":"a constant offset puts an index below zero","stage":"lower"}
+{"file":"$WORK/ops.go","line":22,"func":"FirstIndexNegative","vectorized":false,"reason":"a constant offset puts an index below zero","stage":"lower"}
+{"file":"$WORK/ops.go","line":28,"func":"FirstIndexZero","vectorized":true}
+-- stderr.want --
+loopvec: rewrote 2 loop(s) in $WORK/ops.go
