@@ -1,0 +1,39 @@
+name: Bench
+
+on:
+  push:
+    branches: [bench-amd64-row]
+
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: CPU
+        run: |
+          go install golang.org/x/perf/cmd/benchstat@latest
+          lscpu | grep -E 'Model name'
+          grep -o -w -E 'avx2|avx512f' /proc/cpuinfo | sort -u
+      - name: Build
+        run: |
+          go test -c -o scalar.test ./bench/
+          GOEXPERIMENT=simd go test -c -o stacked.test ./bench/
+          git show origin/offset-store:bench/ops_simd.go > bench/ops_simd.go
+          GOEXPERIMENT=simd go test -c -o partial.test ./bench/
+          git checkout bench/ops_simd.go
+      - name: Interleaved runs
+        run: |
+          for r in 1 2 3 4 5 6 7 8; do
+            for b in scalar partial stacked; do
+              GODEBUG=asyncpreemptoff=1 ./$b.test -test.run '^$' -test.bench 'StoreRow|AccumRow|AddFloat32s|AxpyFloat32s' -test.benchtime=20ms -test.count=1 >> $b.txt
+            done
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bench
+          path: "*.txt"
