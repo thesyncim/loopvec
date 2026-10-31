@@ -1,0 +1,44 @@
+name: Bench
+
+on:
+  pull_request:
+    branches: [master]
+
+jobs:
+  bench:
+    name: bench (${{ matrix.run }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        run: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: CPU
+        run: |
+          go install golang.org/x/perf/cmd/benchstat@latest
+          lscpu | grep -E 'Model name'
+          grep -o -w -E 'avx2|avx512f' /proc/cpuinfo | sort -u
+      - name: Build master's and this branch's generated code
+        run: |
+          GOEXPERIMENT=simd go test -c -o after.test ./bench/
+          git show origin/master:bench/ops_simd.go > bench/ops_simd.go
+          GOEXPERIMENT=simd go test -c -o before.test ./bench/
+          git checkout bench/ops_simd.go
+      - name: Interleaved runs
+        run: |
+          for r in 1 2 3 4 5 6 7 8; do
+            for b in before after; do
+              GODEBUG=asyncpreemptoff=1 ./$b.test -test.run '^$' -test.bench . -test.benchtime=20ms -test.count=1 >> $b.txt
+            done
+          done
+          $(go env GOPATH)/bin/benchstat before.txt after.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bench-${{ matrix.run }}
+          path: "*.txt"
