@@ -986,6 +986,26 @@ func HardSigmoidFloat32s(dst, x []float32) {
 	}
 }
 
+func StoreRowFloat32s(c, x []float32, alpha float32, row, ldc int) {
+	_vcAFloat32s46 := simd.BroadcastFloat32s(alpha)
+	if _loopvecOverlap(c, x, 0+(min(0, row*ldc)), len(x)+(max(0, row*ldc)), 0, len(x)) {
+		for j := range x {
+			c[row*ldc+j] += alpha * x[j]
+		}
+	} else {
+		if len(x) > 0 {
+			_ = c[len(x)+(row*ldc)-1]
+			_ = x[len(x)-1]
+			for _i := 0; _i < len(x); {
+				_v1, _n := simd.LoadFloat32sPart(x[_i:len(x)])
+				_v2, _ := simd.LoadFloat32sPart(c[_i+(row*ldc):])
+				_v1.MulAdd(_vcAFloat32s46, _v2).StorePart(c[_i+(row*ldc) : len(x)+(row*ldc)])
+				_i += _n
+			}
+		}
+	}
+}
+
 func _loopvecOverlap[T any](a, b []T, window ...int) bool {
 	aLo, aHi, bLo, bHi := 0, len(a), 0, len(b)
 	if len(window) == 4 {
